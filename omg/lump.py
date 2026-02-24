@@ -5,21 +5,39 @@
 # graphics functionality at all.
 try:
     from PIL import Image, ImageDraw, ImageOps
-except:
-    pass
+except ImportError:
+    Image = None
 
 # Import PySoundFile for sound file loading/saving. Equally optional.
 try:
-    from soundfile import SoundFile, check_format
     import numpy as np
-except:
-    pass
+except ImportError:
+    np = None
+
+try:
+    from soundfile import SoundFile, check_format
+except ImportError:
+    SoundFile = None
+    check_format = None
 
 import os
+from typing import Optional, Sequence, Tuple, Union
+
 import omg.palette
 from omg.util import *
 
-class Lump(object):
+
+def _require_pillow():
+    if Image is None:
+        raise ImportError("Pillow is required for graphic import/export operations")
+
+
+def _require_soundfile():
+    if SoundFile is None or check_format is None or np is None:
+        raise ImportError("soundfile and numpy are required for sound import/export operations")
+
+
+class Lump:
     """Basic lump class. Instances of Lump (and its subclasses)
     always have the following:
 
@@ -32,12 +50,12 @@ class Lump(object):
     appropriately (for example, Graphic supports various image
     formats)."""
 
-    def __init__(self, data=None, from_file=None):
+    def __init__(self, data: Optional[Union[bytes, "Lump"]] = None, from_file=None):
         """Create a new instance. The `data` parameter may be a string
         representing data for the lump. The `source` parameter may be
         a path to a file or a file-like object to load from."""
         self.data = bytes()
-        if issubclass(type(data), Lump):
+        if isinstance(data, Lump):
             self.data = data.data
         elif data is not None:
             self.data = data or bytes()
@@ -94,7 +112,7 @@ class Sound(Lump):
     """
 
     def __init__(self, data=None, from_file=None):
-        Lump.__init__(self, data, from_file)
+        super().__init__(data, from_file)
         # default to an empty digitized sound effect if no data loaded
         try:
             if self.format is None:
@@ -305,6 +323,7 @@ class Sound(Lump):
         if filename[-4:].lower() == '.lmp':
             self.data = readfile(filename)
         else:
+            _require_soundfile()
             with SoundFile(filename) as file:
                 # get sound data and convert to 8-bit unsigned mono
                 sound = (file.read(dtype='int16') >> 8) + 128
@@ -332,6 +351,7 @@ class Sound(Lump):
         if   format == 'LMP': writefile(filename, self.data)
         elif format == 'RAW': writefile(filename, self.to_raw())
         elif self.format == 3:
+            _require_soundfile()
             if   check_format(format, subtype):  pass
             elif check_format(format, 'PCM_U8'): subtype = 'PCM_U8'
             elif check_format(format, 'PCM_S8'): subtype = 'PCM_S8'
@@ -362,7 +382,7 @@ class Graphic(Lump):
 
     def __init__(self, data=None, from_file=None, palette=None):
         self.palette = palette or omg.palette.default
-        Lump.__init__(self, data, from_file)
+        super().__init__(data, from_file)
 
     def get_offsets(self):
         """Retrieve the (x, y) offsets of the graphic."""
@@ -434,19 +454,26 @@ class Graphic(Lump):
                 offset += 1
             columns_out.append(zip(start_rows, postdata))
         # Second pass: compile column+post data, adding pointers
-        data = []
-        columnptrs = []
+        data_out = bytearray()
+        columnptrs = bytearray()
         pointer = 4*width + 8
         for column in columns_out:
-            columnptrs.append(pack('<i', pointer))
+            columnptrs.extend(pack('<i', pointer))
             for row, pixels in column:
-                data.append(b"%c%c\x00%s\x00" % (row, len(pixels), pixels))
+                data_out.append(row & 0xFF)
+                data_out.append(len(pixels) & 0xFF)
+                data_out.append(0)
+                data_out.extend(pixels)
+                data_out.append(0)
                 pointer += 4 + len(pixels)
-            data.append(b'\xff')
+            data_out.append(0xFF)
             pointer += 1
         # Merge everything together
-        self.data = bytes().join([pack('4h', width, height, x_offset, y_offset),
-                    bytes().join(columnptrs), bytes().join(data)])
+        self.data = (
+            pack('4h', width, height, x_offset, y_offset)
+            + bytes(columnptrs)
+            + bytes(data_out)
+        )
 
     def from_raw(self, data, width, height, x_offset=0, y_offset=0, pal=None):
         """Load a raw 8-bpp image, converting to the Doom picture format
@@ -459,27 +486,28 @@ class Graphic(Lump):
         """Returns self converted to a list of 8bpp pixels.
         Pixels with value None are transparent."""
         data = self.data
+        view = memoryview(data)
         width, height = self.dimensions
         output = [None] * (width*height)
-        pointers = unpack('<%il'%width, data[8 : 8 + width*4])
+        pointers = unpack('<%il'%width, view[8 : 8 + width*4])
         for x in range(width):
             y = -1
             pointer = pointers[x]
             if pointer >= len(data):
                 continue
 
-            while data[pointer] != 0xff:
-                offset = data[pointer]
+            while pointer < len(data) and view[pointer] != 0xff:
+                offset = view[pointer]
                 if offset <= y:
                     y += offset # for tall patches
                 else:
                     y = offset
-                post_length = data[pointer + 1]
+                post_length = view[pointer + 1]
                 op = y*width + x
                 for p in range(pointer + 3, pointer + post_length + 3):
                     if op >= len(output) or p >= len(data):
                         break
-                    output[op] = data[p]
+                    output[op] = view[p]
                     op += width
                 pointer += post_length + 4
         return output
@@ -497,6 +525,7 @@ class Graphic(Lump):
 
     def to_Image(self, mode='P'):
         """Convert to a PIL Image instance."""
+        _require_pillow()
         if mode != 'RGBA' or isinstance(self, Flat):
             # target image has no alpha,
             # or source image is a flat (which has no transparent pixels)
@@ -510,9 +539,17 @@ class Graphic(Lump):
         else:
             # target image is RGBA and source image is not a flat
             im = Image.new('RGBA', self.dimensions, None)
-            data = bytes().join([self.palette.bytes[i*3:i*3+3] + b'\xff' if i is not None \
-                                 else b'\0\0\0\0' for i in self.to_pixels()])
-            im.frombytes(data)
+            pixels = self.to_pixels()
+            palette_bytes = self.palette.bytes
+            rgba = bytearray(len(pixels) * 4)
+            for i, pixel in enumerate(pixels):
+                if pixel is None:
+                    continue
+                src = pixel * 3
+                dst = i * 4
+                rgba[dst:dst+3] = palette_bytes[src:src+3]
+                rgba[dst+3] = 0xFF
+            im.frombytes(bytes(rgba))
             return im
 
     def from_Image(self, im, translate=False):
@@ -529,14 +566,24 @@ class Graphic(Lump):
         width, height = im.size
         xoff, yoff = (width // 2)-1, height-5
         if im.mode == "RGB":
-            pixels = bytes([self.palette.match(unpack('BBB', \
-                pixels[i*3:(i+1)*3])) for i in range(width*height)])
+            if np is not None:
+                rgb = np.frombuffer(pixels, dtype=np.uint8).reshape(-1, 3)
+                pixels = bytes(self.palette.match_batch(rgb))
+            else:
+                pixels = bytes([self.palette.match(unpack('BBB', \
+                    pixels[i*3:(i+1)*3])) for i in range(width*height)])
 
             self.from_raw(pixels, width, height, xoff, yoff, self.palette)
 
         elif im.mode == "RGBA":
-            pixels = [unpack('BBBB', pixels[i*4:(i+1)*4]) for i in range(width*height)]
-            pixels = [self.palette.match(i[0:3]) if i[3] > 0 else None for i in pixels]
+            if np is not None:
+                rgba = np.frombuffer(pixels, dtype=np.uint8).reshape(-1, 4)
+                mapped = self.palette.match_batch(rgba[:, :3])
+                alpha = rgba[:, 3]
+                pixels = [mapped[i] if alpha[i] > 0 else None for i in range(len(mapped))]
+            else:
+                pixels = [unpack('BBBB', pixels[i*4:(i+1)*4]) for i in range(width*height)]
+                pixels = [self.palette.match(i[0:3]) if i[3] > 0 else None for i in pixels]
 
             self.from_pixels(pixels, width, height, xoff, yoff)
 
@@ -580,6 +627,7 @@ class Graphic(Lump):
         if filename[-4:].lower() == '.lmp':
             self.data = readfile(filename)
         else:
+            _require_pillow()
             im = Image.open(filename)
             self.from_Image(im, translate)
 
@@ -615,7 +663,7 @@ class Graphic(Lump):
             self.data = bytes([lexicon[b] for b in self.data])
         else:
             raw = self.to_raw()
-            self.load_raw(bytes([lexicon[b] for b in raw]),
+            self.from_raw(bytes([lexicon[b] for b in raw]),
                 self.width, self.height,
                 self.x_offset, self.y_offset)
 

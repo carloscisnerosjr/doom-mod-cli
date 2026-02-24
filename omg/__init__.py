@@ -24,11 +24,12 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-__version__ = '0.5.1'
+__version__ = '0.6.0'
 __author__  = 'Devin Acker, Fredrik Johansson'
 
 from omg.wadio import *
 from omg.wad import *
 from omg.lump import *
 from omg.mapedit import *
+from omg.spritetools import *
 from omg.udmf import *

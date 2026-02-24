@@ -3,11 +3,12 @@
     by other Omgifol modules.
 """
 
-from __future__  import print_function
 from fnmatch     import fnmatchcase as wccmp, filter as wcinlist
 from struct      import pack, unpack
 from copy        import copy, deepcopy
 from collections import OrderedDict as od
+from typing import BinaryIO, Union
+from os import PathLike
 import ctypes
 
 class OrderedDict(od):
@@ -20,7 +21,7 @@ class OrderedDict(od):
     """
 
     def __init__(self, source=None):
-        od.__init__(self)
+        super().__init__()
         if source:
             self.update(source)
 
@@ -35,15 +36,15 @@ class OrderedDict(od):
 
     def items(self):
         # return list instead of odict_items
-        return [i for i in od.items(self)]
+        return list(od.items(self))
 
     def keys(self):
         # return list instead of odict_keys
-        return [i for i in od.keys(self)]
+        return list(od.keys(self))
 
     def values(self):
         # return list instead of odict_values
-        return [i for i in od.values(self)]
+        return list(od.values(self))
 
     def find(self, pattern):
         """Find all items that match the given pattern (supporting
@@ -65,33 +66,23 @@ def join(seq):
     """Create a joined string out of a list of substrings."""
     return bytes().join(seq)
 
-def readfile(source):
+def readfile(source: Union[str, PathLike, BinaryIO]):
     """Read data from a file, return data as bytes. Target may
     be a path name string or a file-like object (with a `read` method)."""
-    if isinstance(source, str):
-        return open(source, 'rb').read()
+    if isinstance(source, (str, PathLike)):
+        with open(source, 'rb') as f:
+            return f.read()
     else:
         return source.read()
 
-def writefile(target, data):
+def writefile(target: Union[str, PathLike, BinaryIO], data: bytes):
     """Write data to a file. Target may be a path name string
     or a file-like object (with a `write` method)."""
-    if isinstance(target, str):
-        open(target,'wb').write(data)
+    if isinstance(target, (str, PathLike)):
+        with open(target, 'wb') as f:
+            f.write(data)
     else:
         target.write(data)
-
-def any(set):
-    for e in set:
-        if e:
-            return True
-    return False
-
-def all(set):
-    for e in set:
-        if not e:
-            return False
-    return True
 
 def inwclist(elem, seq):
     return any(wccmp(elem, x) for x in seq)
@@ -202,12 +193,12 @@ class WADStruct(ctypes.LittleEndianStructure):
 
     def __getattribute__(self, name):
         value = super().__getattribute__(name)
-        if type(value) == bytes:
+        if isinstance(value, bytes):
             return safe_name(zstrip(value))
         return value
 
     def __setattr__(self, name, value):
-        if type(value) == str:
+        if isinstance(value, str):
             value = safe_name(value).encode('ascii')
         super().__setattr__(name, value)
 

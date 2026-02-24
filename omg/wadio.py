@@ -1,4 +1,8 @@
-import os, hashlib, time
+import hashlib
+import os
+import time
+from typing import Optional, Union
+
 from omg.util import *
 
 class Header(WADStruct):
@@ -29,13 +33,13 @@ class Entry(WADStruct):
 # useful to specifically either open an existing file
 # or create a new one.
 
-def open_wad():
+def open_wad(location: str) -> "WadIO":
     """Open an existing WAD, raise IOError if not found."""
     if not os.path.exists(location):
         raise IOError
     return WadIO(location)
 
-def create_wad(location):
+def create_wad(location: str) -> "WadIO":
     """Create a new WAD, raise IOError if exists."""
     if os.path.exists(location):
         raise IOError
@@ -72,7 +76,7 @@ class WadIO:
     space will appear). To get rid of the wasted space, use the
     rewrite() method (which rewrites the entire file)."""
 
-    def __init__(self, openfrom=None):
+    def __init__(self, openfrom: Optional[str] = None):
         self.basefile = None
         self.issafe = True
         self.header = Header()
@@ -84,9 +88,10 @@ class WadIO:
         if self.basefile:
             self.basefile.close()
 
-    def open(self, filename):
+    def open(self, filename: str):
         """Open a WAD file, create a new file if none exists at the path."""
-        assert not self.entries
+        if self.entries:
+            raise IOError("Close existing WAD before opening another")
         if self.basefile:
             raise IOError("The handle is already open")
         # Open an existing WAD
@@ -97,7 +102,7 @@ class WadIO:
                 # assume file is read-only
                 self.basefile = open(filename, 'rb')
 
-            filesize = os.stat(self.basefile.name)[6]
+            filesize = os.path.getsize(self.basefile.name)
             self.header = h = Header(bytes=self.basefile.read(ctypes.sizeof(Header)))
             if (not h.type in ("PWAD", "IWAD")) or filesize < 12:
                 raise IOError("The file is not a valid WAD file.")
@@ -112,9 +117,10 @@ class WadIO:
             self.basefile.write(Header().pack())
             self.basefile.flush()
 
-    def close(self):
+    def close(self) -> None:
         """Close the base file."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         # Unfortunately, a save can't be forced here.
         if not self.issafe:
             raise IOError(\
@@ -122,10 +128,11 @@ class WadIO:
         self.basefile.close()
         self.basefile = None
 
-    def select(self, id):
+    def select(self, id: Union[int, str]) -> int:
         """Return a valid index from a proposed index or entry name, or
         raise LookupError in case of failure."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         if isinstance(id, int):
             if id < len(self.entries):
                 return id
@@ -137,57 +144,62 @@ class WadIO:
             raise LookupError
         raise TypeError
 
-    def get(self, id):
+    def get(self, id: Union[int, str]) -> Entry:
         return self.entries[self.select(id)]
 
-    def find(self, id):
+    def find(self, id: Union[int, str]) -> Optional[int]:
         """Search for an entry and return the index of the first match
         or None if no matches were found. Wildcards are supported."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         try:
             return self.select(id)
         except LookupError:
             return None
 
-    def multifind(self, id, start=None, end=None):
+    def multifind(self, id: str, start: Optional[int] = None, end: Optional[int] = None) -> list[int]:
         """Search for entries and return a list of matches. Wildcards
         are supported."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         if start is None: start = 0
         if end   is None: end   = len(self.entries)
         return [i for i in range(start, end) if \
                 wccmp(self.entries[i].name, id)]
 
-    def read(self, id):
+    def read(self, id: Union[int, str]) -> bytes:
         """Read an entry and return the data as a binary string."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         id = self.select(id)
         self.basefile.seek(self.entries[id].ptr)
         return self.basefile.read(self.entries[id].size)
 
-    def remove(self, id):
+    def remove(self, id: Union[int, str]) -> None:
         """Remove an entry."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         del (self.entries[self.select(id)])
         self.issafe = False
 
-    def rename(self, id, new):
+    def rename(self, id: Union[int, str], new: str) -> None:
         """Rename an entry."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         self.entries[self.select(id)].name = new[0:8].upper()
         self.issafe = False
 
-    def write_at(self, pos, data):
+    def write_at(self, pos: int, data: bytes) -> None:
         """Write data at the given position."""
         self.basefile.seek(pos)
         self.basefile.write(data)
 
-    def write_append(self, data):
+    def write_append(self, data: bytes) -> None:
         """Write data at the end of the file."""
         self.basefile.seek(0, 2)
         self.basefile.write(data)
 
-    def write_free(self, data):
+    def write_free(self, data: bytes) -> int:
         """Write data to empty space in the file, if available,
         otherwise write to the end of the file.
         Returns the position that was written to.
@@ -206,16 +218,17 @@ class WadIO:
         self.basefile.write(data)
         return pos
 
-    def insert(self, name, data, index=None, use_free=True):
+    def insert(self, name: str, data: bytes, index: Optional[Union[int, str]] = None, use_free: bool = True) -> None:
         """Insert a new entry at the optional index (defaults to
         appending).
 
         If use_free is true, existing free space in the WAD will
         be used, if possible."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         try:
             index = self.select(index)
-        except:
+        except (LookupError, TypeError):
             index = None
         self.issafe = False
 
@@ -235,17 +248,18 @@ class WadIO:
             self.entries.insert(index, Entry(pos, len(data), name))
         self.basefile.flush()
 
-    def update(self, id, data):
+    def update(self, id: Union[int, str], data: bytes) -> None:
         """Write new data for an existing lump. If the new data is
         bigger than what's present, a new position in the file will be
         allocated for the lump."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         id = self.select(id)
         if len(data) != self.entries[id].size:
             self.issafe = False
 
         if len(data) == 0:
-            self.entries[i].ptr = 0
+            self.entries[id].ptr = 0
         elif len(data) <= self.entries[id].size:
             self.write_at(self.entries[id].ptr, data)
         else:
@@ -257,9 +271,10 @@ class WadIO:
         self.entries[id].size = len(data)
         self.basefile.flush()
 
-    def save(self):
+    def save(self) -> None:
         """Save directory and header changes to the WAD file."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         if self.issafe: return
         dir = join([e.pack() for e in self.entries])
         self.header.dir_len = len(self.entries)
@@ -268,14 +283,15 @@ class WadIO:
         self.basefile.flush()
         self.issafe = True
 
-    def rewrite(self):
+    def rewrite(self) -> None:
         """Rewrite the entire WAD file. This removes all garbage
         (wasted space) from the file."""
-        assert self.basefile
+        if not self.basefile:
+            raise IOError("No WAD file is open")
         fpath = self.basefile.name
         # Write to a temporary file and rename it when done
         # os.tmpnam works too, but gives a security warning
-        tmppath = hashlib.md5(str(time.time())).hexdigest()[:8] + ".tmp"
+        tmppath = hashlib.md5(str(time.time()).encode("ascii"), usedforsecurity=False).hexdigest()[:8] + ".tmp"
         tmppath = os.path.join(os.path.dirname(fpath), tmppath)
         outwad = create_wad(tmppath)
         for i in range(len(self.entries)):
@@ -289,12 +305,13 @@ class WadIO:
         self.open(fpath)
         self.issafe = True
 
-    def calc_waste(self):
+    def calc_waste(self) -> tuple[int, list[tuple[int, int]]]:
         """Returns an (int, list) tuple containing the total amount of
         wasted space in the WAD and a list of (start, end) tuples for
         the spots where the wasted chunks are located."""
-        assert self.basefile
-        filesize = os.stat(self.basefile.name)[6]
+        if not self.basefile:
+            raise IOError("No WAD file is open")
+        filesize = os.path.getsize(self.basefile.name)
         # Create a list of (start, end) tuples to represent used space
         chunks = []
         # Treat the header and the end of the file as chunks of used space
@@ -318,11 +335,13 @@ class WadIO:
                 space += positions[-1][1] - positions[-1][0]
         return space, positions
 
-    def info_text(self):
+    def info_text(self) -> str:
         """Return printable fancy-formatted info about the WAD file."""
-        assert self.basefile
-        assert self.issafe
-        filesize = os.stat(self.basefile.name)[6]
+        if not self.basefile:
+            raise IOError("No WAD file is open")
+        if not self.issafe:
+            raise IOError("Cannot get info while file has unsaved changes; call save() first")
+        filesize = os.path.getsize(self.basefile.name)
         s = []
         # Main information
         s.append("Info for %s\n\n" % self.basefile.name)

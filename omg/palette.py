@@ -1,5 +1,11 @@
 from struct   import pack, unpack
+from typing import Iterable, List, Sequence, Tuple
+
 from omg.util import *
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 class Palette:
 
@@ -100,7 +106,8 @@ class Palette:
         A good value for Doom is 10. Anything over 32 only wastes time.
         """
         self.bright_lut = []
-        assert 0 <= distance <= 256
+        if not 0 <= distance <= 256:
+            raise ValueError("distance must be between 0 and 256")
         for level in range(256):
             candidates = []
             for j, rgb in enumerate(self.colors):
@@ -149,10 +156,38 @@ class Palette:
         self.memo[color] = best_i
         return best_i
 
+    def match_batch(self, colors):
+        """Vectorized palette matching for a batch of RGB colors.
+
+        Input may be an Nx3 iterable (r, g, b). Returns a list of palette indices.
+        Uses numpy when available and falls back to scalar `match()` otherwise.
+        """
+        if np is None:
+            return [self.match((int(r), int(g), int(b))) for r, g, b in colors]
+
+        arr = np.asarray(colors, dtype=np.uint8)
+        if arr.size == 0:
+            return []
+        if arr.ndim != 2 or arr.shape[1] != 3:
+            raise ValueError("colors must be a sequence of RGB triples")
+
+        palette = np.asarray(self.colors, dtype=np.int16)
+        arr_i = arr.astype(np.int16)
+
+        # Compute squared Euclidean distances for every input pixel against 256 palette entries.
+        # Shape: (pixel_count, palette_count)
+        diff = arr_i[:, None, :] - palette[None, :, :]
+        dist = np.sum(diff * diff, axis=2)
+        indices = np.argmin(dist, axis=1).astype(np.uint8)
+        tran_mask = np.all(arr == np.asarray(self.tran_color, dtype=np.uint8), axis=1)
+        indices[tran_mask] = self.tran_index
+        return indices.tolist()
+
     def blend(self, color, intensity=0.5):
         """Blend the entire palette against a color (given as an RGB triple).
         Intensity must be a floating-point number in the range 0-1."""
-        assert 0.0 <= intensity <= 1.0
+        if not 0.0 <= intensity <= 1.0:
+            raise ValueError("intensity must be between 0.0 and 1.0")
         nr = color[0] * intensity
         ng = color[1] * intensity
         nb = color[2] * intensity

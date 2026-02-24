@@ -1,4 +1,6 @@
 import os, glob
+from typing import Iterable, Optional, Union
+
 import omg.palette
 from omg.lump  import *
 from omg.util import *
@@ -8,7 +10,7 @@ class LumpGroup(OrderedDict):
     """A dict-like object for holding a group of lumps."""
 
     def __init__(self, name='data', lumptype=Lump, config=()):
-        OrderedDict.__init__(self)
+        super().__init__()
         self._name   = name
         self.lumptype = lumptype
         self.config = config
@@ -17,14 +19,14 @@ class LumpGroup(OrderedDict):
     def __init2__(self):
         pass
 
-    def load(self, filename):
+    def load(self, filename: str):
         """Load entries from a WAD file. All lumps from the same
         section in that WAD is loaded (e.g. if this is a patch
         section, all patches in the WAD will be loaded."""
         w = WAD(filename)
         self += w.__dict__[self._name].copy()
 
-    def to_file(self, filename, use_free=True):
+    def to_file(self, filename: str, use_free: bool = True):
         """Save group as a separate WAD file.
 
         If use_free is true, existing free space in the WAD will
@@ -32,13 +34,13 @@ class LumpGroup(OrderedDict):
         w = WadIO(filename)
         self.save_wadio(w, use_free=use_free)
 
-    def from_glob(self, globpattern):
+    def from_glob(self, globpattern: str):
         """Create lumps from files matching the glob pattern."""
         for p in glob.glob(globpattern):
             name = fixname(os.path.basename(p[:p.rfind('.')]))
             self[name] = self.lumptype(from_file=p)
 
-    def save_wadio(self, wadio, use_free=True):
+    def save_wadio(self, wadio: WadIO, use_free: bool = True):
         """Save to a WadIO object.
 
         If use_free is true, existing free space in the WAD will
@@ -69,7 +71,7 @@ class MarkerGroup(LumpGroup):
         # In case group opens with XX_ and ends with X_
         self.abssuffix = self.config + "_END"
 
-    def load_wadio(self, wadio):
+    def load_wadio(self, wadio: WadIO):
         """Load all matching lumps that have not already
         been flagged as read from the given WadIO object."""
         inside = False
@@ -94,7 +96,7 @@ class MarkerGroup(LumpGroup):
                     inside = True
                     wadio.entries[i].been_read = True
 
-    def save_wadio(self, wadio, use_free=True):
+    def save_wadio(self, wadio: WadIO, use_free: bool = True):
         """Save to a WadIO object.
 
         If use_free is true, existing free space in the WAD will
@@ -112,7 +114,7 @@ class HeaderGroup(LumpGroup):
     def __init2__(self):
         self.tail = self.config
 
-    def load_wadio(self, wadio):
+    def load_wadio(self, wadio: WadIO):
         """Load all matching lumps that have not already
         been flagged as read from the given WadIO object."""
         numlumps = len(wadio.entries)
@@ -143,7 +145,7 @@ class HeaderGroup(LumpGroup):
             if not added:
                 i += 1
 
-    def save_wadio(self, wadio, use_free=True):
+    def save_wadio(self, wadio: WadIO, use_free: bool = True):
         """Save to a WadIO object.
 
         If use_free is true, existing free space in the WAD will
@@ -172,7 +174,7 @@ class NameGroup(LumpGroup):
     def __init2__(self):
         self.names = self.config
 
-    def load_wadio(self, wadio):
+    def load_wadio(self, wadio: WadIO):
         """Load all matching lumps that have not already
         been flagged as read from the given WadIO object."""
         inside = False
@@ -257,7 +259,7 @@ class WAD:
                        the structure definition
     """
 
-    def __init__(self, from_file=None, structure=defstruct):
+    def __init__(self, from_file: Optional[Union[str, WadIO]] = None, structure=defstruct):
         """Create a new WAD. The optional `source` argument may be a
         string specifying a path to a file or a WadIO object.
         If omitted, an empty WAD is created. A WADStructure object
@@ -275,20 +277,21 @@ class WAD:
         if from_file:
             self.from_file(from_file)
 
-    def from_file(self, source):
+    def from_file(self, source: Union[str, WadIO]):
         """Load contents from a file. `source` may be a string
         specifying a path to a file or a WadIO object."""
         if isinstance(source, WadIO):
             w = source
         elif isinstance(source, str):
-            assert os.path.exists(source)
+            if not os.path.exists(source):
+                raise FileNotFoundError(f"WAD file not found: {source}")
             w = WadIO(source)
         else:
             raise TypeError("Expected WadIO or file path string")
         for group in self.groups:
             group.load_wadio(w)
 
-    def to_file(self, filename):
+    def to_file(self, filename: str):
         """Save contents to a WAD file. Caution: if a file with the given name
         already exists, it will be overwritten. However, the existing file will
         be kept as <filename>.tmp until the operation has finished, to stay safe
@@ -307,7 +310,8 @@ class WAD:
             os.remove(tmpfilename)
 
     def __add__(self, other):
-        assert isinstance(other, WAD)
+        if not isinstance(other, WAD):
+            raise TypeError("Can only merge WAD with WAD")
         w = WAD(structure=self.structure)
         for group_def in self.structure:
             name = group_def[1]

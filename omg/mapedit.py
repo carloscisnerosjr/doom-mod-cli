@@ -371,7 +371,8 @@ class MapEditor:
         """Draw a polygon from a list of vertexes. The vertexes may be
         either Vertex objects or simple (x, y) tuples. A sector object
         and prototype sidedef may be provided."""
-        assert len(vertexes) > 2
+        if len(vertexes) <= 2:
+            raise ValueError("Need at least 3 vertexes to draw a sector")
         firstv = len(self.vertexes)
         firsts = len(self.sidedefs)
         if sector  is None: sector  = Sector()

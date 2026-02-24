@@ -41,7 +41,8 @@ class Colormap:
 
     def from_lump(self, lump):
         """Load from a COLORMAP lump."""
-        assert len(lump.data) == 34*256
+        if len(lump.data) != 34 * 256:
+            raise ValueError(f"Invalid COLORMAP size: expected {34*256}, got {len(lump.data)}")
         for n in range(34):
             self.tables[n] = [lump.data[i] for i in range(n*256,(n+1)*256)]
 

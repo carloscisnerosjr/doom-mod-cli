@@ -55,7 +55,8 @@ class Textures(OrderedDict):
         from omg.wad import LumpGroup
         if len(args) == 1:
             g = args[0]
-            assert isinstance(g, LumpGroup)
+            if not isinstance(g, LumpGroup):
+                raise TypeError("Expected LumpGroup")
             if "TEXTURE1" in g: self.from_lumps(g["TEXTURE1"], g["PNAMES"])
             if "TEXTURE2" in g: self.from_lumps(g["TEXTURE2"], g["PNAMES"])
         elif len(args) == 2:
