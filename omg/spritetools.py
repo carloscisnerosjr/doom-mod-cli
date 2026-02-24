@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import zipfile
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from omg.lump import Graphic, Lump
@@ -147,17 +148,7 @@ class SpriteSheet:
 
     def auto_offset(self, mode: Union[str, Tuple[int, int]] = "center-bottom") -> None:
         for frame in self.frames:
-            w, h = frame.graphic.width, frame.graphic.height
-            if isinstance(mode, tuple):
-                offsets = mode
-            elif mode == "center-bottom":
-                offsets = ((w // 2) - 1, h - 5)
-            elif mode == "center":
-                offsets = ((w // 2) - 1, (h // 2) - 1)
-            elif mode == "weapon":
-                offsets = (160, 200 - h)
-            else:
-                raise ValueError(f"Unknown offset mode: {mode}")
+            offsets = _compute_offsets(frame.graphic.width, frame.graphic.height, mode)
             frame.graphic.offsets = offsets
 
     def to_wad_sprites(self) -> Dict[str, Graphic]:
@@ -177,6 +168,22 @@ def _default_states_from_frames(frames: Sequence[SpriteFrame]) -> Dict[str, List
     return {"Spawn": ordered}
 
 
+def _compute_offsets(
+    width: int,
+    height: int,
+    mode: Union[str, Tuple[int, int]] = "center-bottom",
+) -> Tuple[int, int]:
+    if isinstance(mode, tuple):
+        return mode
+    if mode == "center-bottom":
+        return ((width // 2) - 1, height - 5)
+    if mode == "center":
+        return ((width // 2) - 1, (height // 2) - 1)
+    if mode == "weapon":
+        return (160, 200 - height)
+    raise ValueError(f"Unknown offset mode: {mode}")
+
+
 def generate_decorate(
     actor_name: str,
     sprite_prefix: str,
@@ -186,10 +193,17 @@ def generate_decorate(
     radius: int = 20,
     height: int = 16,
     flags: Optional[Sequence[str]] = None,
+    replaces: Optional[str] = None,
+    parent: Optional[str] = None,
+    frame_offsets: Optional[Dict[str, Tuple[int, int]]] = None,
 ) -> str:
     sprite_prefix = _normalize_prefix(sprite_prefix)
     flags = list(flags or ["+SOLID", "+SHOOTABLE"])
     actor_header = f"ACTOR {actor_name}"
+    if parent:
+        actor_header += f" : {parent}"
+    if replaces:
+        actor_header += f" replaces {replaces}"
     if doomednum is not None:
         actor_header += f" {doomednum}"
 
@@ -209,7 +223,12 @@ def generate_decorate(
             continue
         lines.append(f"  {state_name}:")
         for frame in frames:
-            lines.append(f"    {sprite_prefix} {frame.upper()} 4")
+            frame_key = frame.upper()
+            offset_text = ""
+            if frame_offsets and frame_key in frame_offsets:
+                ox, oy = frame_offsets[frame_key]
+                offset_text = f" Offset({ox}, {oy})"
+            lines.append(f"    {sprite_prefix} {frame_key} 4{offset_text}")
         if state_name.lower() in {"death", "xdeath"}:
             lines.append("    Stop")
         else:
@@ -232,6 +251,8 @@ def folder_to_wad(
     radius: int = 20,
     height: int = 16,
     flags: Optional[Sequence[str]] = None,
+    replaces: Optional[str] = None,
+    parent: Optional[str] = None,
 ) -> None:
     prefix = _normalize_prefix(sprite_prefix or _auto_prefix_from_actor(actor_name))
     sheet = SpriteSheet(prefix=prefix)
@@ -248,6 +269,8 @@ def folder_to_wad(
         radius=radius,
         height=height,
         flags=flags,
+        replaces=replaces,
+        parent=parent,
     )
 
     wad = WAD()
@@ -255,3 +278,60 @@ def folder_to_wad(
         wad.sprites[lump_name] = graphic
     wad.data["DECORATE"] = Lump(data=decorate_text.encode("ascii"))
     wad.to_file(str(output_wad))
+
+
+def folder_to_pk3(
+    input_folder: Union[str, Path],
+    output_pk3: Union[str, Path],
+    actor_name: str,
+    sprite_prefix: Optional[str] = None,
+    doomednum: Optional[int] = None,
+    offset_mode: Union[str, Tuple[int, int]] = "center-bottom",
+    states: Optional[Dict[str, List[str]]] = None,
+    health: Optional[int] = None,
+    radius: int = 20,
+    height: int = 16,
+    flags: Optional[Sequence[str]] = None,
+    replaces: Optional[str] = None,
+    parent: Optional[str] = None,
+) -> None:
+    prefix = _normalize_prefix(sprite_prefix or _auto_prefix_from_actor(actor_name))
+    sheet = SpriteSheet(prefix=prefix)
+    sheet.add_frames_from_folder(input_folder, naming="auto")
+    sheet.auto_offset(offset_mode)
+
+    states_config = states or _default_states_from_frames(sheet.frames)
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise ImportError("folder_to_pk3 requires Pillow to read PNG dimensions") from exc
+
+    frame_offsets: Dict[str, Tuple[int, int]] = {}
+    for frame in sheet.frames:
+        with Image.open(frame.image_path) as img:
+            width, height_px = img.size
+        frame_offsets.setdefault(
+            frame.frame_letter.upper(),
+            _compute_offsets(width, height_px, offset_mode),
+        )
+
+    decorate_text = generate_decorate(
+        actor_name=actor_name,
+        sprite_prefix=prefix,
+        states_config=states_config,
+        doomednum=doomednum,
+        health=health,
+        radius=radius,
+        height=height,
+        flags=flags,
+        replaces=replaces,
+        parent=parent,
+        frame_offsets=frame_offsets,
+    )
+
+    output_path = Path(output_pk3)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for frame in sheet.frames:
+            zf.write(frame.image_path, arcname=f"sprites/{frame.lump_name}.png")
+        zf.writestr("DECORATE", decorate_text.encode("ascii"))
