@@ -29,5 +29,11 @@ setup(
         'audio': ['soundfile', 'numpy'],
         'bgremove': ['rembg', 'Pillow'],
     },
+    entry_points={
+        'console_scripts': [
+            'omgifol=omg.__main__:main',
+            'png2wad=scripts.png2wad:main',
+        ],
+    },
     scripts=glob.glob("demo/*.py") + glob.glob("scripts/*.py"),
 )

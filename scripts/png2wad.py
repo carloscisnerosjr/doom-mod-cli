@@ -62,6 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="+SOLID,+SHOOTABLE",
         help="Comma-separated DECORATE flags (default: +SOLID,+SHOOTABLE)",
     )
+    parser.add_argument(
+        "--mirror5",
+        action="store_true",
+        help="Use 5-angle mirrored import (1,2/8,3/7,4/6,5). Requires PNG count multiple of 5.",
+    )
     return parser
 
 
@@ -98,6 +103,7 @@ def main() -> int:
         flags=flags,
         replaces=args.replaces,
         parent=args.parent,
+        naming="mirror5" if args.mirror5 else "auto",
     )
     if args.format == "pk3":
         folder_to_pk3(output_pk3=args.output, **convert_kwargs)

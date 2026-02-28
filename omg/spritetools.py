@@ -31,6 +31,21 @@ def _frame_for_index(index: int) -> str:
     return chr(ord("A") + (index % 26))
 
 
+def _mirror5_lump_name(prefix: str, frame_letter: str, rotation: int) -> str:
+    frame_letter = frame_letter.upper()
+    if rotation == 1:
+        return f"{prefix}{frame_letter}1"
+    if rotation == 2:
+        return f"{prefix}{frame_letter}2{frame_letter}8"
+    if rotation == 3:
+        return f"{prefix}{frame_letter}3{frame_letter}7"
+    if rotation == 4:
+        return f"{prefix}{frame_letter}4{frame_letter}6"
+    if rotation == 5:
+        return f"{prefix}{frame_letter}5"
+    raise ValueError("mirror5 rotation must be in range 1..5")
+
+
 def parse_frame_range(spec: str) -> List[str]:
     part = spec.strip().upper()
     if "-" in part:
@@ -119,6 +134,27 @@ class SpriteSheet:
             raise ValueError(f"No PNG files found in {folder}")
 
         added: List[SpriteFrame] = []
+        if naming == "mirror5":
+            if len(pngs) % 5 != 0:
+                raise ValueError(
+                    "mirror5 naming requires PNG count to be a multiple of 5 "
+                    "(per frame: rotations 1,2,3,4,5 mirrored to 8,7,6)."
+                )
+            for i in range(0, len(pngs), 5):
+                frame_letter = _frame_for_index(i // 5)
+                group = pngs[i : i + 5]
+                for rot, image in enumerate(group, start=1):
+                    lump_name = _mirror5_lump_name(self.prefix, frame_letter, rot)
+                    added.append(
+                        self.add_frame(
+                            frame_letter=frame_letter,
+                            rotation=rot,
+                            image_path=image,
+                            lump_name=lump_name,
+                        )
+                    )
+            return added
+
         for i, image in enumerate(pngs):
             stem = image.stem.upper()
             match = _EXPLICIT_SPRITE_RE.match(stem)
@@ -253,10 +289,11 @@ def folder_to_wad(
     flags: Optional[Sequence[str]] = None,
     replaces: Optional[str] = None,
     parent: Optional[str] = None,
+    naming: str = "auto",
 ) -> None:
     prefix = _normalize_prefix(sprite_prefix or _auto_prefix_from_actor(actor_name))
     sheet = SpriteSheet(prefix=prefix)
-    sheet.add_frames_from_folder(input_folder, naming="auto")
+    sheet.add_frames_from_folder(input_folder, naming=naming)
     sheet.auto_offset(offset_mode)
 
     states_config = states or _default_states_from_frames(sheet.frames)
@@ -294,10 +331,11 @@ def folder_to_pk3(
     flags: Optional[Sequence[str]] = None,
     replaces: Optional[str] = None,
     parent: Optional[str] = None,
+    naming: str = "auto",
 ) -> None:
     prefix = _normalize_prefix(sprite_prefix or _auto_prefix_from_actor(actor_name))
     sheet = SpriteSheet(prefix=prefix)
-    sheet.add_frames_from_folder(input_folder, naming="auto")
+    sheet.add_frames_from_folder(input_folder, naming=naming)
     sheet.auto_offset(offset_mode)
 
     states_config = states or _default_states_from_frames(sheet.frames)

@@ -33,3 +33,4 @@ from omg.lump import *
 from omg.mapedit import *
 from omg.spritetools import *
 from omg.udmf import *
+from omg.wadtools import *
