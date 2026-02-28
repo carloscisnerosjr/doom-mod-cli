@@ -3,7 +3,7 @@ import os
 import time
 from typing import Optional, Union
 
-from omg.util import *
+from doomcli.util import *
 
 class Header(WADStruct):
     """Class for WAD file headers."""

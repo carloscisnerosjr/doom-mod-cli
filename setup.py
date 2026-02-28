@@ -4,9 +4,9 @@ from setuptools import setup, find_packages
 import glob
 
 setup(
-    name='omgifol',
+    name='doomcli',
     version='0.6.0',
-    description='A Python library for manipulation of Doom WAD files',
+    description='An interactive command-line toolkit and Python library for Doom WAD files',
     url='https://github.com/devinacker/omgifol',
     author='Devin Acker, Fredrik Johansson',
     author_email='d@revenant1.net',
@@ -31,7 +31,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'doomcli=omg.__main__:main',
+            'doomcli=doomcli.__main__:main',
             'png2wad=scripts.png2wad:main',
         ],
     },

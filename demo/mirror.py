@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from sys import argv
-from omg import *
-from omg.mapedit import *
+from doomcli import *
+from doomcli.mapedit import *
 
 def mirror(map):
     ed = MapEditor(map)

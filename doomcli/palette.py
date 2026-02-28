@@ -1,7 +1,7 @@
 from struct   import pack, unpack
 from typing import Iterable, List, Sequence, Tuple
 
-from omg.util import *
+from doomcli.util import *
 try:
     import numpy as np
 except ImportError:

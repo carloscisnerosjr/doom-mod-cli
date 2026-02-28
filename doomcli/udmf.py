@@ -1,7 +1,7 @@
 import re
-from omg.mapedit import MapEditor, Linedef
-from omg.wad import NameGroup
-from omg.lump import Lump
+from doomcli.mapedit import MapEditor, Linedef
+from doomcli.wad import NameGroup
+from doomcli.lump import Lump
 
 class UBlock:
     @staticmethod
@@ -271,7 +271,7 @@ class UMapEditor:
         things        List containing UThing objects
         behavior      Lump object containing compiled ACS scripts
         scripts       Lump object containing ACS script source
-        namespace     Map's UDMF namespace (see omg.udmf_namespaces for recognized values)
+        namespace     Map's UDMF namespace (see doomcli.udmf_namespaces for recognized values)
         """
 
     def __init__(self, lumpgroup=None, namespace=None):

@@ -1,5 +1,5 @@
-import omg.palette
-import omg.lump
+import doomcli.palette
+import doomcli.lump
 
 class Colormap:
     """An editor for Doom's COLORMAP lump. The colormap holds 34 tables
@@ -16,7 +16,7 @@ class Colormap:
     def build_fade(self, palette=None, fade=(0,0,0)):
         """Build fade tables. The default fade color is black;
         this may be overriden. Light color is not yet supported."""
-        palette = palette or omg.palette.default
+        palette = palette or doomcli.palette.default
         x, y, z = fade
         for n in range(32):
             e = 31-n
@@ -29,7 +29,7 @@ class Colormap:
 
     def build_invuln(self, palette=None, start=(0,0,0), end=(255,255,255)):
         """Build range used by the invulnerability powerup."""
-        palette = palette or omg.palette.default
+        palette = palette or doomcli.palette.default
         ar, ag, ab = start
         br, bg, bb = end
         for i in range(256):
@@ -51,10 +51,10 @@ class Colormap:
         output = bytes()
         for t in self.tables:
             output += bytes(t)
-        return omg.lump.Lump(output)
+        return doomcli.lump.Lump(output)
 
         # packed = [''.join([chr(c) for c in t]) for t in self.tables]
-        # return omg.lump.Lump(''.join(packed))
+        # return doomcli.lump.Lump(''.join(packed))
 
     def set_position(self,table,index,pal_index):
         """Sets a specified position in the colormap to the specified

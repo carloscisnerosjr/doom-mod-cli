@@ -1,6 +1,6 @@
-from omg.lump import Lump
-from omg.util import *
-from omg.wad  import TxdefGroup
+from doomcli.lump import Lump
+from doomcli.util import *
+from doomcli.wad  import TxdefGroup
 
 class TextureDef(WADStruct):
     """Class for texture definitions."""
@@ -52,7 +52,7 @@ class Textures(OrderedDict):
     def from_lumps(self, *args):
         """Load texture definitions from a TEXTURE1/2 lump and its
         associated PNAMES lump, or a lump group containing the lumps."""
-        from omg.wad import LumpGroup
+        from doomcli.wad import LumpGroup
         if len(args) == 1:
             g = args[0]
             if not isinstance(g, LumpGroup):

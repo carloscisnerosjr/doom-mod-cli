@@ -3,7 +3,7 @@
 # by Frans P. de Vries (Xymph)
 
 import sys, getopt
-from omg import *
+from doomcli import *
 
 if len(sys.argv) < 2:
     print("\n    Omgifol script: list WAD directory\n")

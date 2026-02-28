@@ -6,9 +6,9 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from omg.wad import WAD, LumpGroup
-from omg.lump import Graphic, Flat, Lump, Sound
-from omg.mapedit import MapEditor
+from doomcli.wad import WAD, LumpGroup
+from doomcli.lump import Graphic, Flat, Lump, Sound
+from doomcli.mapedit import MapEditor
 
 
 def wad_summary(wad: WAD) -> Dict[str, int]:

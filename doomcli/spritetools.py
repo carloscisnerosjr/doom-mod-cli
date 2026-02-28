@@ -6,9 +6,9 @@ import re
 import zipfile
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from omg.lump import Graphic, Lump
-from omg.wad import WAD
-from omg.util import OrderedDict, safe_name
+from doomcli.lump import Graphic, Lump
+from doomcli.wad import WAD
+from doomcli.util import OrderedDict, safe_name
 
 
 _EXPLICIT_SPRITE_RE = re.compile(

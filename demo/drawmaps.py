@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from omg import *
+from doomcli import *
 import sys
 from PIL import Image, ImageDraw
 

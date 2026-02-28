@@ -8,12 +8,12 @@ import textwrap
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import omg
-from omg.wad import WAD, LumpGroup
-from omg.wadio import WadIO
-from omg.lump import Lump, Graphic, Flat, Sound
-from omg.mapedit import MapEditor
-from omg.util import OrderedDict
+import doomcli
+from doomcli.wad import WAD, LumpGroup
+from doomcli.wadio import WadIO
+from doomcli.lump import Lump, Graphic, Flat, Sound
+from doomcli.mapedit import MapEditor
+from doomcli.util import OrderedDict
 
 
 BANNER = r"""
@@ -34,7 +34,7 @@ class CLI:
 
     def run(self):
         print(BANNER)
-        print(f"  Doom Mod CLI v{omg.__version__} -- powered by omgifol")
+        print(f"  Doom Mod CLI v{doomcli.__version__} -- powered by omgifol")
         print(f"  Type 'help' for commands, 'quit' to exit.\n")
 
         while self.running:
@@ -392,7 +392,7 @@ class CLI:
         self._run_sprite_pipeline("pk3")
 
     def _run_sprite_pipeline(self, fmt: str):
-        from omg.spritetools import folder_to_wad, folder_to_pk3, parse_states_spec
+        from doomcli.spritetools import folder_to_wad, folder_to_pk3, parse_states_spec
 
         print(f"  -- Batch PNG -> {fmt.upper()} Pipeline --\n")
         folder = _prompt("  PNG folder path: ").strip().strip('"').strip("'")
@@ -464,7 +464,7 @@ class CLI:
         print(f"  Imported {len(pngs)} PNGs with DECORATE for actor {actor!r}\n")
 
     def cmd_decorate(self, args: str):
-        from omg.spritetools import generate_decorate, parse_states_spec
+        from doomcli.spritetools import generate_decorate, parse_states_spec
 
         print("  -- DECORATE Generator --\n")
         actor = _prompt("  Actor name: ")
@@ -615,7 +615,7 @@ class CLI:
             print("  No texture definitions in this WAD.\n")
             return
         try:
-            from omg.txdef import Textures
+            from doomcli.txdef import Textures
             tx = Textures(self.wad.txdefs)
             print(f"  Textures ({len(tx)}):")
             for name, tdef in list(tx.items())[:50]:
@@ -638,7 +638,7 @@ class CLI:
             print("  Pillow is required for palette export.\n")
             return
 
-        pal = omg.palette.default
+        pal = doomcli.palette.default
         if self.wad:
             pal = self.wad.palette
 
@@ -654,7 +654,7 @@ class CLI:
         if "COLORMAP" not in self.wad.data:
             print("  No COLORMAP lump in this WAD.\n")
             return
-        from omg.colormap import Colormap
+        from doomcli.colormap import Colormap
         cm = Colormap(from_lump=self.wad.data["COLORMAP"])
         print(f"  COLORMAP: {len(cm.tables)} tables (32 brightness + invuln + unused)")
         print(f"  Table 0 (brightest) sample: {cm.tables[0][:16]}...")
@@ -666,7 +666,7 @@ class CLI:
 
     def cmd_export_all_sprites(self, args: str):
         self._require_wad()
-        from omg.wadtools import extract_all_sprites
+        from doomcli.wadtools import extract_all_sprites
         outdir = args.strip().strip('"').strip("'") or _prompt("Output directory: ")
         if not outdir:
             return
@@ -675,7 +675,7 @@ class CLI:
 
     def cmd_export_all_sounds(self, args: str):
         self._require_wad()
-        from omg.wadtools import extract_all_sounds
+        from doomcli.wadtools import extract_all_sounds
         outdir = args.strip().strip('"').strip("'") or _prompt("Output directory: ")
         if not outdir:
             return
@@ -684,7 +684,7 @@ class CLI:
 
     def cmd_export_all_flats(self, args: str):
         self._require_wad()
-        from omg.wadtools import extract_all_flats
+        from doomcli.wadtools import extract_all_flats
         outdir = args.strip().strip('"').strip("'") or _prompt("Output directory: ")
         if not outdir:
             return

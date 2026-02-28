@@ -1,6 +1,6 @@
-from omg.lump import Lump
-from omg.util import *
-import omg.palette
+from doomcli.lump import Lump
+from doomcli.util import *
+import doomcli.palette
 
 class Playpal:
     """An editor for Doom's PLAYPAL lump. The PLAYPAL lump contains 14
@@ -50,7 +50,7 @@ class Playpal:
 
     def from_lump(self, lump):
         """Load data from a PLAYPAL lump."""
-        self.palettes = [omg.palette.Palette(lump.data[i*768:(i+1)*768], 0, 0)
+        self.palettes = [doomcli.palette.Palette(lump.data[i*768:(i+1)*768], 0, 0)
             for i in range(14)]
 
     def to_lump(self):
@@ -60,5 +60,5 @@ class Playpal:
     def set_base(self, palette=None):
         """Set all palettes to copies of a given Palette object. If the
         palette parameter is not provided, the default palette is used."""
-        palette = palette or omg.palette.default
+        palette = palette or doomcli.palette.default
         self.palettes = [deepcopy(palette) for i in range(14)]

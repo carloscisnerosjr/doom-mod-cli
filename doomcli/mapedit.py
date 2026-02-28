@@ -1,9 +1,9 @@
-from omg.util import *
-from omg.lump import *
-from omg.wad import NameGroup
+from doomcli.util import *
+from doomcli.lump import *
+from doomcli.wad import NameGroup
 
-import omg.lineinfo as lineinfo
-import omg.thinginfo as thinginfo
+import doomcli.lineinfo as lineinfo
+import doomcli.thinginfo as thinginfo
 
 class Vertex(WADStruct):
     """Represents a map vertex."""

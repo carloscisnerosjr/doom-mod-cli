@@ -156,7 +156,7 @@ def WADFlags(flags):
     individually or as an entire 16-bit field.
 
     The flags argument is a list of (name, size) tuples, where size is in bits.
-    See omg.mapedit for usage examples.
+    See doomcli.mapedit for usage examples.
     """
     class FlagsUnion(ctypes.Union):
         class Flags(ctypes.LittleEndianStructure):

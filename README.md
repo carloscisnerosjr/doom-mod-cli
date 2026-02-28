@@ -24,31 +24,31 @@ Doom Mod CLI (`doomcli`) is a full-featured interactive command-line toolkit for
 ## Installation
 
 ```bash
-pip install omgifol
+pip install doomcli
 ```
 
 For graphic conversion (PNG/BMP import/export) and performance-critical palette matching:
 
 ```bash
-pip install omgifol[graphics]   # installs Pillow + numpy
+pip install doomcli[graphics]   # installs Pillow + numpy
 ```
 
 For audio import/export:
 
 ```bash
-pip install omgifol[audio]      # installs soundfile + numpy
+pip install doomcli[audio]      # installs soundfile + numpy
 ```
 
 For AI background removal on sprites:
 
 ```bash
-pip install omgifol[bgremove]   # installs rembg + Pillow
+pip install doomcli[bgremove]   # installs rembg + Pillow
 ```
 
 Or install everything at once:
 
 ```bash
-pip install omgifol[graphics,audio,bgremove]
+pip install doomcli[graphics,audio,bgremove]
 ```
 
 **Requires Python 3.9+**
@@ -60,7 +60,7 @@ Launch the interactive shell:
 ```bash
 doomcli
 # or
-python -m omg
+python -m doomcli
 ```
 
 ```
@@ -166,7 +166,7 @@ doomcli [DOOM2.WAD]> quit
 ### Load a WAD and list its contents
 
 ```python
-from omg import *
+from doomcli import *
 
 wad = WAD("DOOM2.WAD")
 
@@ -178,7 +178,7 @@ print("Sounds:", wad.sounds.keys()[:10])
 ### Extract a sprite to PNG
 
 ```python
-from omg import *
+from doomcli import *
 
 wad = WAD("DOOM2.WAD")
 wad.sprites["TROOA1"].to_file("trooper_front.png", mode="RGBA")
@@ -187,7 +187,7 @@ wad.sprites["TROOA1"].to_file("trooper_front.png", mode="RGBA")
 ### Import a PNG as a sprite
 
 ```python
-from omg import *
+from doomcli import *
 
 wad = WAD()
 sprite = Graphic(from_file="my_sprite.png")
@@ -199,7 +199,7 @@ wad.to_file("mymod.wad")
 ### Batch-import a folder of PNGs into a playable WAD
 
 ```python
-from omg.spritetools import folder_to_wad
+from doomcli.spritetools import folder_to_wad
 
 folder_to_wad(
     input_folder="./sprites/bezos/",
@@ -216,7 +216,7 @@ folder_to_wad(
 ### Generate a PK3 instead
 
 ```python
-from omg.spritetools import folder_to_pk3
+from doomcli.spritetools import folder_to_pk3
 
 folder_to_pk3(
     input_folder="./sprites/bezos/",
@@ -231,7 +231,7 @@ folder_to_pk3(
 ### Edit a map
 
 ```python
-from omg import *
+from doomcli import *
 
 wad = WAD("DOOM2.WAD")
 editor = MapEditor(wad.maps["MAP01"])
@@ -246,7 +246,7 @@ wad.to_file("shifted.wad")
 ### Draw a sector from scratch
 
 ```python
-from omg import *
+from doomcli import *
 
 wad = WAD()
 editor = MapEditor()
@@ -316,7 +316,7 @@ wad.to_file("box.wad")
 ### DECORATE Generation
 
 ```python
-from omg.spritetools import generate_decorate
+from doomcli.spritetools import generate_decorate
 
 decorate = generate_decorate(
     actor_name="DoomBezos",
@@ -406,19 +406,19 @@ Options:
 
 | Class | Module | Description |
 |---|---|---|
-| `WAD` | `omg.wad` | High-level WAD file representation with section-based access |
-| `WadIO` | `omg.wadio` | Low-level WAD I/O for direct lump manipulation |
-| `Lump` | `omg.lump` | Base lump class for raw binary data |
-| `Graphic` | `omg.lump` | Doom patch-format graphic with PIL conversion |
-| `Flat` | `omg.lump` | 64x64 floor/ceiling flat graphic |
-| `Sound` | `omg.lump` | Doom DMX-format sound with audio file conversion |
-| `Music` | `omg.lump` | Music lump (placeholder) |
-| `Palette` | `omg.palette` | Color palette with RGB matching and blending |
-| `MapEditor` | `omg.mapedit` | Map geometry editor with struct types |
-| `SpriteSheet` | `omg.spritetools` | Multi-frame sprite manager for batch import |
-| `Textures` | `omg.txdef` | TEXTURE1/2 and PNAMES editor |
-| `Colormap` | `omg.colormap` | COLORMAP lump editor |
-| `Playpal` | `omg.playpal` | PLAYPAL lump editor |
+| `WAD` | `doomcli.wad` | High-level WAD file representation with section-based access |
+| `WadIO` | `doomcli.wadio` | Low-level WAD I/O for direct lump manipulation |
+| `Lump` | `doomcli.lump` | Base lump class for raw binary data |
+| `Graphic` | `doomcli.lump` | Doom patch-format graphic with PIL conversion |
+| `Flat` | `doomcli.lump` | 64x64 floor/ceiling flat graphic |
+| `Sound` | `doomcli.lump` | Doom DMX-format sound with audio file conversion |
+| `Music` | `doomcli.lump` | Music lump (placeholder) |
+| `Palette` | `doomcli.palette` | Color palette with RGB matching and blending |
+| `MapEditor` | `doomcli.mapedit` | Map geometry editor with struct types |
+| `SpriteSheet` | `doomcli.spritetools` | Multi-frame sprite manager for batch import |
+| `Textures` | `doomcli.txdef` | TEXTURE1/2 and PNAMES editor |
+| `Colormap` | `doomcli.colormap` | COLORMAP lump editor |
+| `Playpal` | `doomcli.playpal` | PLAYPAL lump editor |
 
 ### WAD Sections
 
@@ -441,7 +441,7 @@ wad.data        # Everything else
 ### Sprite Pipeline Functions
 
 ```python
-from omg.spritetools import (
+from doomcli.spritetools import (
     SpriteSheet,          # manage sprite frames
     folder_to_wad,        # PNG folder -> WAD with DECORATE
     folder_to_pk3,        # PNG folder -> PK3 with DECORATE
@@ -453,7 +453,7 @@ from omg.spritetools import (
 ### Convenience Functions
 
 ```python
-from omg.wadtools import (
+from doomcli.wadtools import (
     wad_summary,           # section name -> lump count dict
     list_sprites,          # structured sprite info
     list_maps,             # combined map name list

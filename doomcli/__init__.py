@@ -1,7 +1,7 @@
 """
-Omgifol - a Python library for Doom WAD files
+Doom Mod CLI (doomcli) - a Python toolkit for Doom WAD files
 
-Website: http://fredrikj.net/
+Originally Omgifol by Fredrik Johansson -- http://fredrikj.net/
 
 Copyright (c) 2005 Fredrik Johansson
 
@@ -27,10 +27,10 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 __version__ = '0.6.0'
 __author__  = 'Devin Acker, Fredrik Johansson'
 
-from omg.wadio import *
-from omg.wad import *
-from omg.lump import *
-from omg.mapedit import *
-from omg.spritetools import *
-from omg.udmf import *
-from omg.wadtools import *
+from doomcli.wadio import *
+from doomcli.wad import *
+from doomcli.lump import *
+from doomcli.mapedit import *
+from doomcli.spritetools import *
+from doomcli.udmf import *
+from doomcli.wadtools import *

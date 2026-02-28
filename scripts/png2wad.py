@@ -5,13 +5,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Add project root so "omg" is importable when run from repo
+# Add project root so "doomcli" is importable when run from repo
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import argparse
 from typing import Dict, List, Optional, Tuple, Union
 
-from omg.spritetools import folder_to_pk3, folder_to_wad, parse_states_spec
+from doomcli.spritetools import folder_to_pk3, folder_to_wad, parse_states_spec
 
 
 def parse_custom_offset(value: str) -> Tuple[int, int]:

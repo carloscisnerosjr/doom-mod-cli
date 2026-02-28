@@ -23,8 +23,8 @@ except ImportError:
 import os
 from typing import Optional, Sequence, Tuple, Union
 
-import omg.palette
-from omg.util import *
+import doomcli.palette
+from doomcli.util import *
 
 
 def _require_pillow():
@@ -381,7 +381,7 @@ class Graphic(Lump):
     """
 
     def __init__(self, data=None, from_file=None, palette=None):
-        self.palette = palette or omg.palette.default
+        self.palette = palette or doomcli.palette.default
         super().__init__(data, from_file)
 
     def get_offsets(self):
@@ -478,7 +478,7 @@ class Graphic(Lump):
     def from_raw(self, data, width, height, x_offset=0, y_offset=0, pal=None):
         """Load a raw 8-bpp image, converting to the Doom picture format
         (used by all graphics except flats)."""
-        pal = pal or omg.palette.default
+        pal = pal or doomcli.palette.default
         pixels = [i if i != pal.tran_index else None for i in data]
         self.from_pixels(pixels, width, height, x_offset, y_offset)
 

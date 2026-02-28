@@ -1,10 +1,10 @@
 import os, glob
 from typing import Iterable, Optional, Union
 
-import omg.palette
-from omg.lump  import *
-from omg.util import *
-from omg.wadio import WadIO
+import doomcli.palette
+from doomcli.lump  import *
+from doomcli.util import *
+from doomcli.wadio import WadIO
 
 class LumpGroup(OrderedDict):
     """A dict-like object for holding a group of lumps."""
@@ -191,8 +191,8 @@ class TxdefGroup(NameGroup):
     def __init2__(self):
         self.names = ['TEXTURE?', 'PNAMES']
     def __add__(self, other):
-        import omg.txdef
-        a = omg.txdef.Textures()
+        import doomcli.txdef
+        a = doomcli.txdef.Textures()
         a.from_lumps(self)
         a.from_lumps(other)
         return a.to_lumps()
@@ -267,7 +267,7 @@ class WAD:
         section structure. By default, the structure specified in the
         defdata module is used."""
         self.__category = 'root'
-        self.palette = omg.palette.default
+        self.palette = doomcli.palette.default
         self.structure = structure
         self.groups = []
         for group_def in self.structure:
