@@ -1,4 +1,4 @@
-"""Interactive CLI for Omgifol -- exposes the full library through guided menus."""
+"""Doom Mod CLI -- interactive command-line toolkit for Doom WAD files."""
 
 from __future__ import annotations
 
@@ -17,17 +17,15 @@ from omg.util import OrderedDict
 
 
 BANNER = r"""
-   ____                  _  __       __
-  / __ \____ ___  ____ _(_)/ /____  / /
- / / / / __ `__ \/ __ `/ / /_/ __ \/ /
-/ /_/ / / / / / / /_/ / / __/ /_/ / /
-\____/_/ /_/ /_/\__, /_/_/  \____/_/
-               /____/
+    ___                        __  ___          __   ________    ____
+   / _ \ ___   ___   __ _     /  |/  / ___  ___/ /  / ___/ /   /  _/
+  / // // _ \ / _ \ /  ' \   / /|_/ / / _ \/ _  /  / /__/ /__ _/ /
+ /____/ \___/ \___//_/_/_/  /_/  /_/  \___/\_,_/   \___/____//___/
 """
 
 
 class CLI:
-    """Interactive CLI session wrapping omgifol operations."""
+    """Doom Mod CLI -- interactive session wrapping omgifol operations."""
 
     def __init__(self):
         self.wad: Optional[WAD] = None
@@ -36,13 +34,13 @@ class CLI:
 
     def run(self):
         print(BANNER)
-        print(f"  Omgifol v{omg.__version__} -- Interactive WAD Toolkit")
+        print(f"  Doom Mod CLI v{omg.__version__} -- powered by omgifol")
         print(f"  Type 'help' for commands, 'quit' to exit.\n")
 
         while self.running:
             status = f" [{self.wad_path}]" if self.wad_path else ""
             try:
-                line = input(f"omg{status}> ").strip()
+                line = input(f"doomcli{status}> ").strip()
             except (EOFError, KeyboardInterrupt):
                 print()
                 break

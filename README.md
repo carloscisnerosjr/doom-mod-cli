@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="banner.png" alt="Omgifol Banner" width="100%">
+  <img src="banner.png" alt="Doom Mod CLI" width="100%">
 </p>
 
-<h1 align="center">Omgifol</h1>
+<h1 align="center">Doom Mod CLI</h1>
 
 <p align="center">
-  <strong>A Python library for manipulating Doom WAD files</strong>
+  <strong>An interactive command-line toolkit and Python library for Doom WAD files</strong>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#features">Features</a> •
-  <a href="#interactive-cli">CLI</a> •
-  <a href="#api-reference">API Reference</a> •
+  <a href="#installation">Installation</a> &bull;
+  <a href="#doom-mod-cli">CLI</a> &bull;
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#features">Features</a> &bull;
+  <a href="#api-reference">API Reference</a> &bull;
   <a href="#license">License</a>
 </p>
 
 ---
 
-Omgifol lets you read, create, and modify Doom engine WAD files entirely from Python. Load IWADs and PWADs, extract and insert lumps, convert between image formats and Doom's graphic format, edit maps programmatically, batch-import PNG sprite sheets into ready-to-play WADs or PK3s, and generate DECORATE actor definitions — all from a few lines of code or the built-in interactive CLI.
+Doom Mod CLI (`doomcli`) is a full-featured interactive command-line toolkit for working with Doom engine WAD files, built on top of the [omgifol](https://github.com/devinacker/omgifol) Python library. Load IWADs and PWADs, extract and insert lumps, convert between image formats and Doom's graphic format, edit maps programmatically, batch-import PNG sprite sheets into ready-to-play WADs or PK3s, and generate DECORATE actor definitions -- all from an interactive shell or a few lines of Python.
 
 ## Installation
 
@@ -52,6 +52,114 @@ pip install omgifol[graphics,audio,bgremove]
 ```
 
 **Requires Python 3.9+**
+
+## Doom Mod CLI
+
+Launch the interactive shell:
+
+```bash
+doomcli
+# or
+python -m omg
+```
+
+```
+    ___                        __  ___          __   ________    ____
+   / _ \ ___   ___   __ _     /  |/  / ___  ___/ /  / ___/ /   /  _/
+  / // // _ \ / _ \ /  ' \   / /|_/ / / _ \/ _  /  / /__/ /__ _/ /
+ /____/ \___/ \___//_/_/_/  /_/  /_/  \___/\_,_/   \___/____//___/
+
+  Doom Mod CLI v0.6.0 -- powered by omgifol
+  Type 'help' for commands, 'quit' to exit.
+
+doomcli>
+```
+
+### CLI Commands
+
+**WAD Operations**
+
+| Command | Description |
+|---|---|
+| `open <path>` | Open an existing WAD file |
+| `new` | Create a new empty PWAD in memory |
+| `save` | Save changes to the current WAD |
+| `saveas <path>` | Save the WAD to a new file |
+| `close` | Close the current WAD |
+| `merge <path>` | Merge another WAD into the current one |
+| `info` | Show WAD file summary |
+
+**Lump Management**
+
+| Command | Description |
+|---|---|
+| `sections` | List all WAD sections and lump counts |
+| `lumps [section]` | List lumps (all or in a specific section) |
+| `extract <name> <file>` | Extract a lump to file |
+| `import <name> <file>` | Import a file as a lump |
+| `remove <name>` | Remove a lump |
+| `rename <old> <new>` | Rename a lump |
+
+**Sprites & Sprite Pipeline**
+
+| Command | Description |
+|---|---|
+| `sprites` | List all sprites with dimensions and offsets |
+| `sprite-import <file>` | Import a PNG as a sprite (interactive) |
+| `sprite-export <name>` | Export a sprite to PNG |
+| `png2wad` | Batch PNG folder -> WAD with DECORATE (interactive wizard) |
+| `png2pk3` | Batch PNG folder -> PK3 with DECORATE (interactive wizard) |
+| `decorate` | Generate a DECORATE definition (interactive) |
+
+**Maps, Sounds & Batch Export**
+
+| Command | Description |
+|---|---|
+| `maps` | List all maps |
+| `mapinfo <name>` | Show map statistics (vertices, linedefs, sectors, things) |
+| `sounds` | List all sounds with format info |
+| `sound-export <name>` | Export a sound to WAV |
+| `sound-import <file>` | Import an audio file as a sound |
+| `export-sprites <dir>` | Export all sprites to a directory as PNGs |
+| `export-sounds <dir>` | Export all sounds to a directory as WAVs |
+| `export-flats <dir>` | Export all flats to a directory as PNGs |
+
+**Textures & Palette**
+
+| Command | Description |
+|---|---|
+| `textures` | List texture definitions |
+| `palette [file]` | Export the palette to a PNG file |
+| `colormap` | Show colormap info |
+
+### CLI Example Session
+
+```
+doomcli> open DOOM2.WAD
+  Opened DOOM2.WAD -- 2919 lumps loaded.
+
+doomcli [DOOM2.WAD]> sprites
+  Sprites (483):
+    TROOA1     41x56  offset (18, 51)
+    TROOA2A8   44x57  offset (22, 52)
+    ...
+
+doomcli [DOOM2.WAD]> mapinfo MAP01
+  Map: MAP01
+    Vertices:  383
+    Linedefs:  475
+    Sidedefs:  658
+    Sectors:   85
+    Things:    69
+
+doomcli [DOOM2.WAD]> sprite-export TROOA1
+  Output file [TROOA1.png]:
+  Mode (P/RGB/RGBA) [RGBA]:
+  Exported TROOA1 -> TROOA1.png
+
+doomcli [DOOM2.WAD]> quit
+  Goodbye.
+```
 
 ## Quick Start
 
@@ -179,10 +287,10 @@ wad.to_file("box.wad")
 
 | Capability | Description |
 |---|---|
-| **Format conversion** | Doom patch format ↔ PNG/BMP/JPG via Pillow |
-| **Palette matching** | Fast numpy-vectorized RGB → palette index conversion |
+| **Format conversion** | Doom patch format to/from PNG/BMP/JPG via Pillow |
+| **Palette matching** | Fast numpy-vectorized RGB to palette index conversion |
 | **Sprite offsets** | Read/write x,y offsets for proper in-game positioning |
-| **Flat support** | Handle 64×64 floor/ceiling textures |
+| **Flat support** | Handle 64x64 floor/ceiling textures |
 | **Batch import** | `SpriteSheet` class for multi-frame sprite management |
 | **Auto-naming** | Automatic Doom sprite name assignment (prefix + frame + rotation) |
 | **Mirror-5 mode** | 5-angle import with automatic mirroring for 8-rotation coverage |
@@ -192,9 +300,9 @@ wad.to_file("box.wad")
 
 | Mode | Behavior |
 |---|---|
-| `center-bottom` | `x = width/2, y = height - 5` — standard for standing actors |
-| `center` | `x = width/2, y = height/2` — projectiles, effects |
-| `weapon` | `x = 160, y = 200 - height` — weapon sprites |
+| `center-bottom` | `x = width/2, y = height - 5` -- standard for standing actors |
+| `center` | `x = width/2, y = height/2` -- projectiles, effects |
+| `weapon` | `x = 160, y = 200 - height` -- weapon sprites |
 | `(x, y)` | Custom tuple for manual control |
 
 ### Auto-Naming Conventions
@@ -240,7 +348,7 @@ decorate = generate_decorate(
 
 | Capability | Description |
 |---|---|
-| **Sound import** | Convert WAV/OGG/FLAC → Doom DMX format via soundfile |
+| **Sound import** | Convert WAV/OGG/FLAC to Doom DMX format via soundfile |
 | **Sound export** | Convert DMX sounds to WAV/OGG/FLAC |
 | **Format support** | PC speaker, MIDI sequence, MIDI note, digitized (8-bit PCM) |
 
@@ -260,31 +368,12 @@ decorate = generate_decorate(
 | **Colormap editor** | Generate brightness fade tables and invulnerability maps |
 | **Custom palettes** | Create palettes from arbitrary color lists |
 
-## Interactive CLI
-
-Omgifol includes a full interactive command-line interface that exposes every capability of the library through guided menus.
-
-```bash
-python -m omg
-```
-
-The CLI provides:
-
-- **WAD Operations** — Open, create, merge, inspect, and save WAD files
-- **Lump Management** — List, extract, import, rename, and remove individual lumps
-- **Sprite Pipeline** — Batch-import PNG folders with auto-naming, offsets, and DECORATE
-- **Map Inspection** — View map stats (vertices, linedefs, sectors, things)
-- **Graphic Conversion** — Convert between Doom graphics and standard image formats
-- **Sound Conversion** — Convert between DMX sounds and audio files
-- **Texture Editing** — List and inspect texture definitions
-- **Palette Tools** — Export palette to PNG, rebuild colormaps and PLAYPALs
-
 ## CLI Script: png2wad
 
 A standalone command-line tool for the sprite pipeline:
 
 ```bash
-python scripts/png2wad.py ./my_sprites/ -o monster.wad \
+png2wad ./my_sprites/ -o monster.wad \
     --actor "DoomBezos" --prefix "BEZS" \
     --doomednum 14000 --health 500 \
     --offset center-bottom \
@@ -321,7 +410,7 @@ Options:
 | `WadIO` | `omg.wadio` | Low-level WAD I/O for direct lump manipulation |
 | `Lump` | `omg.lump` | Base lump class for raw binary data |
 | `Graphic` | `omg.lump` | Doom patch-format graphic with PIL conversion |
-| `Flat` | `omg.lump` | 64×64 floor/ceiling flat graphic |
+| `Flat` | `omg.lump` | 64x64 floor/ceiling flat graphic |
 | `Sound` | `omg.lump` | Doom DMX-format sound with audio file conversion |
 | `Music` | `omg.lump` | Music lump (placeholder) |
 | `Palette` | `omg.palette` | Color palette with RGB matching and blending |
@@ -354,17 +443,34 @@ wad.data        # Everything else
 ```python
 from omg.spritetools import (
     SpriteSheet,          # manage sprite frames
-    folder_to_wad,        # PNG folder → WAD with DECORATE
-    folder_to_pk3,        # PNG folder → PK3 with DECORATE
+    folder_to_wad,        # PNG folder -> WAD with DECORATE
+    folder_to_pk3,        # PNG folder -> PK3 with DECORATE
     generate_decorate,    # generate DECORATE actor definition
     parse_states_spec,    # parse "idle:A-D,death:L-P" strings
 )
 ```
 
+### Convenience Functions
+
+```python
+from omg.wadtools import (
+    wad_summary,           # section name -> lump count dict
+    list_sprites,          # structured sprite info
+    list_maps,             # combined map name list
+    map_stats,             # vertex/linedef/sector/thing counts
+    extract_all_sprites,   # batch export sprites to PNGs
+    extract_all_sounds,    # batch export sounds to WAVs
+    extract_all_flats,     # batch export flats to PNGs
+    import_sprites_from_dir,  # batch import PNGs as sprites
+    merge_wads,            # merge multiple WAD files
+    replace_thing_type,    # find/replace thing types in a map
+)
+```
+
 ## Project History
 
-Originally created by **Fredrik Johansson** (2005). Maintained by **Devin Acker** since version 0.3.0. Modernized for Python 3.9+ with numpy-accelerated palette matching, sprite pipeline tools, and interactive CLI.
+Originally created by **Fredrik Johansson** (2005). Maintained by **Devin Acker** since version 0.3.0. Modernized for Python 3.9+ with numpy-accelerated palette matching, sprite pipeline tools, and the Doom Mod CLI.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License -- see [LICENSE](LICENSE) for details.

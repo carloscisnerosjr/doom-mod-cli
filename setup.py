@@ -31,7 +31,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'omgifol=omg.__main__:main',
+            'doomcli=omg.__main__:main',
             'png2wad=scripts.png2wad:main',
         ],
     },
